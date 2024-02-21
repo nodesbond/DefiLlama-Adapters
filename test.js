@@ -100,15 +100,19 @@ if (process.argv.length < 3) {
 }
 const passedFile = path.resolve(process.cwd(), process.argv[2]);
 
-const originalCall = sdk.api.abi.call
-sdk.api.abi.call = async (...args) => {
-  try {
-    return await originalCall(...args)
-  } catch (e) {
-    console.log("sdk.api.abi.call errored with params:", args)
-    throw e
-  }
-}
+// Wrapping the original function for better error handling and logging
+const wrapCallWithLogging = (originalCall) => {
+  return async (...args) => {
+    try {
+      return await originalCall(...args);
+    } catch (e) {
+      console.error("Error in sdk.api.abi.call with params:", args, "\nError:", e);
+      throw e; // Rethrowing the error to ensure it can be handled elsewhere
+    }
+  };
+};
+
+sdk.api.abi.call = wrapCallWithLogging(sdk.api.abi.call);
 
 (async () => {
   let module = {};
